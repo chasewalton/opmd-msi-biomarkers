@@ -1,0 +1,51 @@
+# Selection-rule thresholds. These are the hyperparameters that operationalize
+# the prose criteria in the preliminary results section.
+
+schema_version: 1
+
+# Filter 1 — Lesion-to-normal contrast strength.
+# Require strong upregulation in lesion versus normal epithelium (C3 contrast).
+lesion_to_normal_contrast:
+  min_hedges_g: 0.50            # medium-to-large effect, pooled across cohorts
+  max_meta_p_fdr: 0.05          # FDR-adjusted pooled p-value
+  min_cohorts_with_same_direction: 4   # consistency across primary C3 cohorts
+  require_C1_consistent_direction: true
+  require_C2_consistent_direction: true
+
+# Filter 2 — Penalty on elevated baseline expression in normal tissues.
+# A surface marker that is highly expressed across many normal tissues is a
+# poor MSI target (off-target binding). We compute a per-gene baseline score
+# from reference panels and convert it into a multiplicative penalty.
+baseline_normal_penalty:
+  reference_panels: [Human_Protein_Atlas_Normal_Tissue, Bgee, Expression_Atlas]
+  min_panels_in_agreement: 2     # at least 2/3 must agree
+  oral_relevant_tissues:
+    - oral mucosa
+    - tongue
+    - esophagus epithelium
+    - skin epidermis
+  # A gene with mean nTPM > high_baseline_tpm across non-oral normal tissues is
+  # penalized; > excluded_baseline_tpm is dropped outright.
+  high_baseline_tpm: 15.0
+  excluded_baseline_tpm: 50.0
+  penalty_curve: log1p          # final_score *= 1 / (1 + log1p(baseline_tpm))
+
+# Filter 3 — Hard requirement on cell-surface localization.
+# MSI probes must bind an accessible epitope on the cell exterior.
+surface_localization:
+  source: Human_Protein_Atlas_Normal_Tissue
+  required_subcellular_locations:
+    - "Plasma membrane"
+    - "Cell surface"
+  required_secretome_categories:
+    - "Membrane proteins"
+  allow_secreted: false          # secreted-only proteins are excluded
+  allow_predicted_only: false    # must have experimental evidence per HPA
+
+# Filter 4 — Druggability / antibody availability (advisory, not gating).
+druggability_check:
+  enabled: true
+  sources:
+    - OpenTargets
+    - DGIdb
+  weight_in_composite: 0.10

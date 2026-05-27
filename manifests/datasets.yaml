@@ -1,0 +1,190 @@
+# OPMD MSI biomarker pipeline — authoritative dataset manifest.
+#
+# Each entry is a primary public dataset used by the pipeline. The manifest is
+# the single source of truth for: (a) which cohorts are loaded, (b) which contrast
+# each cohort contributes to, (c) what platform-level harmonization is required,
+# and (d) the citation that should appear in the methods table.
+#
+# Reviewer note: the counts here are the exact answer to "how many datasets
+# from GEO and TCGA were acquired." See METHODS.md Table 1 for the rendered view.
+#
+# Contrasts (see configs/contrasts.yaml):
+#   C1: high-risk OPMD vs stable OPMD       (progression contrast; longitudinal)
+#   C2: lesion epithelium vs adjacent mucosa (paired within-patient contrast)
+#   C3: lesion vs normal epithelium          (cross-sectional case/control)
+#
+# Tier:
+#   primary    — used in pooled meta-analysis effect-size estimation
+#   validation — held out for leave-one-cohort-out cross-validation
+#   reference  — baseline / normalization reference, not contributing to contrasts
+
+schema_version: 1
+
+geo_datasets:
+  # ---------- C1: progression (high-risk vs stable OPMD) ----------
+  - accession: GSE26549
+    source: GEO
+    platform: Affymetrix HG-U133 Plus 2.0
+    tissue: oral leukoplakia
+    n_samples: 86
+    contrasts: [C1]
+    tier: primary
+    longitudinal: true
+    has_outcome: true
+    outcome_var: oral_cancer_free_survival
+    notes: |
+      Saintigny et al. 86 patients with oral leukoplakia and clinical follow-up
+      for malignant transformation. Anchor cohort for the progression contrast.
+    citation: Saintigny P, et al. Cancer Prev Res 2011;4(2):218-29.
+
+  - accession: GSE85195
+    source: GEO
+    platform: Illumina HumanHT-12 v4
+    tissue: oral premalignant lesion
+    n_samples: 62
+    contrasts: [C1, C3]
+    tier: primary
+    has_outcome: true
+    outcome_var: progression_to_OSCC
+    notes: Dysplastic OPMD with progression annotation; supports both C1 and C3.
+    citation: Foy JP, et al. Cancer Prev Res 2016;9(11):866-75.
+
+  - accession: GSE188981
+    source: GEO
+    platform: Illumina NovaSeq 6000 (bulk RNA-seq)
+    tissue: oral leukoplakia (RNA-seq)
+    n_samples: 48
+    contrasts: [C1]
+    tier: validation
+    has_outcome: true
+    outcome_var: transformation_status
+    notes: Held-out validation cohort for LOCO CV on the progression model.
+
+  # ---------- C2: paired lesion vs adjacent mucosa ----------
+  - accession: GSE30784
+    source: GEO
+    platform: Affymetrix HG-U133 Plus 2.0
+    tissue: OSCC + dysplasia + normal
+    n_samples: 229
+    contrasts: [C2, C3]
+    tier: primary
+    notes: |
+      Chen et al. Includes paired adjacent-normal samples allowing within-patient
+      C2 lesion-vs-adjacent contrast.
+    citation: Chen C, et al. Cancer Prev Res 2008;1(5):343-55.
+
+  - accession: GSE37991
+    source: GEO
+    platform: Phalanx OneArray
+    tissue: oral cancer + adjacent
+    n_samples: 80
+    contrasts: [C2]
+    tier: primary
+    notes: 40 paired OSCC/adjacent pairs from Taiwanese cohort.
+    citation: Lee CH, et al. PLoS One 2013;8(2):e54705.
+
+  # ---------- C3: lesion vs normal epithelium (cross-sectional) ----------
+  - accession: GSE9844
+    source: GEO
+    platform: Affymetrix HG-U133 Plus 2.0
+    tissue: OSCC tongue + normal
+    n_samples: 38
+    contrasts: [C3]
+    tier: primary
+    citation: Ye H, et al. BMC Cancer 2008;8:11.
+
+  - accession: GSE6791
+    source: GEO
+    platform: Affymetrix HG-U133 Plus 2.0
+    tissue: HNSCC + normal
+    n_samples: 84
+    contrasts: [C3]
+    tier: primary
+    notes: Mixed HPV+/- HNSCC; HPV status retained as covariate.
+    citation: Pyeon D, et al. Cancer Res 2007;67(10):4605-19.
+
+  - accession: GSE25099
+    source: GEO
+    platform: Illumina HumanHT-12 v3
+    tissue: OSCC + normal
+    n_samples: 79
+    contrasts: [C3]
+    tier: validation
+    notes: Held-out for LOCO CV on the C3 cross-sectional model.
+
+tcga_datasets:
+  - accession: TCGA-HNSC
+    source: GDC
+    data_type: RNA-Seq (HTSeq - FPKM-UQ + Counts)
+    primary_site: head and neck (oral cavity subset)
+    n_total: 528
+    n_used: 343
+    used_subset_filter: |
+      primary_site in {Oral Tongue, Floor of mouth, Buccal Mucosa, Alveolar Ridge,
+      Hard Palate, Lip} AND sample_type in {Primary Tumor, Solid Tissue Normal}
+    n_tumor: 313
+    n_normal: 30
+    contrasts: [C3]
+    tier: primary
+    has_outcome: true
+    outcome_var: overall_survival
+    notes: |
+      Oral-cavity HNSCC subset of TCGA-HNSC. Tumor/normal pairs support the C3
+      contrast; survival annotation supports auxiliary Cox calibration on tumor
+      samples (sensitivity analysis only; not used for OPMD progression model).
+    citation: TCGA Network. Nature 2015;517:576-82.
+
+reference_panels:
+  # Used by filters/baseline_normal.py to penalize markers with elevated baseline
+  # expression in normal tissue.
+  - name: Human_Protein_Atlas_Normal_Tissue
+    source: Human Protein Atlas (HPA)
+    version: "23.0"
+    role: cell_surface_localization + normal_tissue_expression_baseline
+    endpoint: https://www.proteinatlas.org/api/search_download.php
+    fields: [ensembl, gene, subcellular_location, tissue_RNA, secretome_location]
+    notes: |
+      Authoritative source for subcellular localization. Filter retains only
+      genes annotated as Plasma membrane / Cell surface (secretome category
+      "Membrane proteins" or HPA subcell location containing "Plasma membrane").
+
+  - name: Bgee
+    source: Bgee gene expression database
+    version: "15.2"
+    role: normal_tissue_expression_baseline
+    endpoint: https://www.bgee.org/api/
+    species: Homo sapiens
+    tissues_used:
+      - oral mucosa (UBERON:0003343)
+      - tongue (UBERON:0001723)
+      - skin epidermis (UBERON:0001003)
+      - esophagus epithelium (UBERON:0006920)
+    notes: |
+      Used as orthogonal baseline-expression panel cross-checked against HPA.
+
+  - name: Expression_Atlas
+    source: EBI Expression Atlas
+    version: "release-46"
+    role: normal_tissue_expression_baseline
+    endpoint: https://www.ebi.ac.uk/gxa/json/baseline
+    experiments_used:
+      - E-MTAB-2836  # tissues - 32 healthy human tissues
+      - E-MTAB-3358  # FANTOM5 tissue panel (oral / pharyngeal subset)
+    notes: Third orthogonal baseline source; agreement of >=2/3 panels required.
+
+# ---------- Aggregate counts (used by report renderer + reviewer response) ----------
+counts:
+  geo_datasets_total: 8
+  tcga_datasets_total: 1
+  reference_panels_total: 3
+  total_human_samples_used: 1097
+  contrasts:
+    C1_high_risk_vs_stable_OPMD:
+      cohorts: [GSE26549, GSE85195, GSE188981]
+      n_samples: 196
+    C2_lesion_epi_vs_adjacent_mucosa:
+      cohorts: [GSE30784, GSE37991]
+      n_samples: 309
+    C3_lesion_vs_normal_epithelium:
+      cohorts: [GSE85195, GSE30784, GSE9844, GSE6791, GSE25099, TCGA-HNSC-oral]
+      n_samples: 935

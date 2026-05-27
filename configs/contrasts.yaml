@@ -1,0 +1,48 @@
+# Definition of the three harmonized effect-size contrasts.
+# Each contrast specifies the case/control grouping and the meta-analysis model
+# used to pool across cohorts.
+
+schema_version: 1
+
+contrasts:
+  C1:
+    name: high_risk_vs_stable_OPMD
+    description: |
+      Among OPMD samples, contrast samples that progressed to OSCC within the
+      follow-up window (or carry high-grade dysplasia at biopsy) against samples
+      that remained stable. This is the progression contrast.
+    case:
+      filter: risk_class == "high_risk_OPMD"
+    control:
+      filter: risk_class == "stable_OPMD"
+    effect_size: hedges_g
+    meta_model: random_effects_REML
+    pairing: independent
+
+  C2:
+    name: lesion_epi_vs_adjacent_mucosa
+    description: |
+      Within each patient, contrast the lesion epithelium against the
+      patient's own histologically normal adjacent mucosa. Within-patient
+      pairing eliminates inter-individual variability.
+    case:
+      filter: tissue_class in ["low_grade_dysplasia", "high_grade_dysplasia", "OSCC"]
+    control:
+      filter: tissue_class == "adjacent_mucosa"
+    effect_size: paired_log2_fold_change
+    meta_model: random_effects_REML
+    pairing: by_patient_id
+
+  C3:
+    name: lesion_vs_normal_epithelium
+    description: |
+      Cross-sectional contrast: any lesion sample against histologically normal
+      epithelium from unrelated donors. Largest contrast in sample size; used
+      as the primary "lesion-to-normal" filter in the selection rule.
+    case:
+      filter: tissue_class in ["low_grade_dysplasia", "high_grade_dysplasia", "OSCC"]
+    control:
+      filter: tissue_class == "normal"
+    effect_size: hedges_g
+    meta_model: random_effects_REML
+    pairing: independent

@@ -1,0 +1,29 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+build/
+dist/
+.venv/
+venv/
+.env
+
+# Data and outputs
+data/raw/
+data/harmonized/
+data/cache/
+outputs/
+!outputs/.gitkeep
+
+# Editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Notebooks
+.ipynb_checkpoints/

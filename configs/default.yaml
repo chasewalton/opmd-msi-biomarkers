@@ -1,0 +1,58 @@
+# Top-level pipeline configuration.
+
+schema_version: 1
+
+random_seed: 42
+
+paths:
+  manifest: manifests/datasets.yaml
+  cohort_schema: manifests/cohorts.yaml
+  contrasts: configs/contrasts.yaml
+  filters: configs/filters.yaml
+  raw_dir: data/raw
+  harmonized_dir: data/harmonized
+  outputs_dir: outputs
+
+harmonization:
+  log_transform: true
+  log_pseudocount: 1.0
+  per_cohort_quantile_normalize: true
+  remove_batch_effects: combat
+  gene_id_space: HGNC
+  drop_genes_in_fewer_than_n_cohorts: 4
+
+ml:
+  cox:
+    penalty: l1
+    l1_ratio: 1.0
+    alphas: [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1.0]
+    monotonic_constraints:
+      # All retained markers are required to be monotonically associated with
+      # transformation risk in the same direction as their meta-analysis sign.
+      enforce_sign_from: C1
+    max_iter: 5000
+  logistic:
+    penalty: l1
+    Cs: [0.01, 0.1, 1.0, 10.0]
+    class_weight: balanced
+    max_iter: 5000
+  cv:
+    strategy: leave_one_cohort_out
+    refit_on_all_after_cv: true
+
+ranking:
+  shap:
+    background_n: 200
+    n_repeats: 5
+  composite_score:
+    # final_score =
+    #     w_effect * sigmoid(z_effect)
+    #   + w_shap   * sigmoid(z_shap)
+    #   + w_corr   * sigmoid(z_corr)
+    # where z_* are z-scored across surviving candidates, and the result is
+    # multiplied by the baseline_normal_penalty multiplier.
+    w_effect: 0.40
+    w_shap: 0.40
+    w_corr: 0.20
+  top_n: 25
+  promoted_top_n: 3

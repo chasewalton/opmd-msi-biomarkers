@@ -1,0 +1,41 @@
+# Sample-level metadata schema each cohort must conform to after harmonization.
+# Cohort loaders are responsible for translating source metadata into this schema.
+
+schema_version: 1
+
+required_columns:
+  - sample_id           # globally unique
+  - cohort_id           # e.g. GSE26549
+  - patient_id          # for paired-sample contrasts
+  - tissue_class        # one of: normal, adjacent_mucosa, low_grade_dysplasia,
+                        # high_grade_dysplasia, OSCC
+  - risk_class          # one of: stable_OPMD, high_risk_OPMD, OSCC, normal
+                        # high_risk = transformed within follow-up OR
+                        # high-grade dysplasia at biopsy
+  - platform            # array or RNA-seq platform identifier
+  - assay_type          # one of: microarray, bulk_rnaseq
+  - sex                 # M / F / unknown
+  - age_years           # numeric or NA
+  - smoker              # 0 / 1 / NA
+  - hpv_status          # +/-/unknown (relevant for oropharyngeal subset)
+  - follow_up_months    # numeric (C1 cohorts only)
+  - transformed         # 0/1 (C1 cohorts only)
+  - time_to_transformation_months  # numeric (C1 cohorts only)
+
+categorical_value_sets:
+  tissue_class:
+    - normal
+    - adjacent_mucosa
+    - low_grade_dysplasia
+    - high_grade_dysplasia
+    - OSCC
+  risk_class:
+    - normal
+    - stable_OPMD
+    - high_risk_OPMD
+    - OSCC
+  assay_type:
+    - microarray
+    - bulk_rnaseq
+
+# Cohorts must define mapping rules in code; see src/opmd_msi/data/fetchers/*.
