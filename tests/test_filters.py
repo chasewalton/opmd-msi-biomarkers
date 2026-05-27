@@ -1,5 +1,3 @@
-import pandas as pd
-
 from opmd_msi.data.fetchers.atlas import synthetic_atlas_annotations
 from opmd_msi.data.fetchers.bgee import synthetic_bgee_annotations
 from opmd_msi.data.fetchers.hpa import synthetic_hpa_annotations

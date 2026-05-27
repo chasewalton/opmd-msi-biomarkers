@@ -48,8 +48,8 @@ def compose_ranking(
         on="gene", how="left",
     )
     # Drop anything excluded outright by the baseline filter (defensive — should
-    # already have been removed at the filter step).
-    df = df[df["excluded_for_high_baseline"] != True].copy()
+    # already have been removed at the filter step). Cast first so NaN → False.
+    df = df.loc[~df["excluded_for_high_baseline"].fillna(False).astype(bool)].copy()
 
     df["abs_pooled_c3"] = df["pooled_estimate"].abs().fillna(0)
     df["mean_abs_shap"] = df["mean_abs_shap"].fillna(0)

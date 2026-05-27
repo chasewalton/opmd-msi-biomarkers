@@ -58,7 +58,7 @@ def _combat_like(
     """
     expr = expression.copy()
     grand_mean = expr.mean(axis=0)
-    for cohort_id, sample_ids in metadata.groupby(cohort_col).groups.items():
+    for _cohort_id, sample_ids in metadata.groupby(cohort_col).groups.items():
         idx = list(sample_ids)
         cohort_mean = expr.loc[idx].mean(axis=0)
         expr.loc[idx] = expr.loc[idx] - cohort_mean + grand_mean
@@ -88,7 +88,7 @@ def harmonize(
     # 2. concat (samples on rows; reindex to keep_genes; fill missing with NaN)
     expr_parts: list[pd.DataFrame] = []
     meta_parts: list[pd.DataFrame] = []
-    for cid, payload in cohorts.items():
+    for _cid, payload in cohorts.items():
         ex = payload["expression"].reindex(columns=keep_genes)
         if quantile_normalize:
             ex = _quantile_normalize(ex)
