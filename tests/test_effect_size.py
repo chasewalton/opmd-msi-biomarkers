@@ -25,6 +25,13 @@ def test_hedges_g_positive_for_shifted():
     assert est.p_value < 1e-5
 
 
+def test_hedges_g_ignores_roundoff_in_constant_imputed_expression():
+    estimate = hedges_g(np.full(35, 11.55245), np.full(51, 11.55245))
+    assert estimate.estimate == 0
+    assert estimate.p_value == 1
+    assert np.isinf(estimate.variance)
+
+
 def test_paired_log2fc():
     rng = np.random.default_rng(0)
     base = rng.normal(loc=5.0, size=40)

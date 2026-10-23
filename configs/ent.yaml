@@ -1,0 +1,27 @@
+schema_version: 1
+
+references:
+  evidence: ../manifests/ent_evidence.csv
+  antibodies: ../manifests/research_antibodies.csv
+  oral_background: ../manifests/normal_oral_protein.csv
+  tracer_suitability: ../manifests/tracer_suitability.yaml
+
+filters:
+  epithelial_localization: supported
+  transformation_protein_evidence: supported
+  antibody_origin: Humanised
+  require_supplier_listing: true
+  min_progression_abs_g: 0.50
+  max_progression_p: 0.05
+  min_lesion_g: 0.50
+  max_lesion_fdr: 0.05
+  min_consistent_cohorts: 4
+
+ranking:
+  progression_weight: 0.40
+  lesion_weight: 0.40
+  oral_background_weight: 0.20
+  top_n: 25
+  promoted_top_n: 3
+
+selection_type: curated_clinical_prioritization

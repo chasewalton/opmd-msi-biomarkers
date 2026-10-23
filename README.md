@@ -3,19 +3,20 @@
 Reproducible ML pipeline that selects cell-surface biomarkers for molecular
 surgical imaging (MSI) of oral potentially malignant disorders (OPMDs).
 
-The pipeline operationalizes the selection logic reported in the project's
-preliminary results: harmonized cross-cohort meta-analysis over three contrasts,
-hard requirement for cell-surface localization, penalty on elevated normal-tissue
-baseline, L1-regularized Cox + logistic models with monotonic constraints, and
-SHAP-based feature importance averaged across leave-one-cohort-out folds.
+The real-data pipeline combines transcriptomic contrasts with reviewed epithelial
+protein-outcome evidence, available humanized antibodies, and normal oral protein
+background. Candidate eligibility and ranking are configured in `configs/ent.yaml`.
+The synthetic demo separately exercises the original model-based workflow.
 
 The reproducible synthetic-data demo runs end-to-end without network access
-and recovers **PD-L1 (CD274), MET, and NOTCH1** as the top-3 candidates,
-matching the originally reported result.
+and recovers **PD-L1 (CD274), MET, and NOTCH1** as the top-3 candidates in its
+generated data. The real-data ranking is labeled `curated_clinical_prioritization`.
 
-## Reviewer rebuttal package
+## Original workflow documentation
 
-If you are a reviewer or assessor, read in this order:
+The documents below describe the original workflow. For the implemented ENT
+selection rules, use `configs/ent.yaml`, `manifests/`, and the real-data commands
+below.
 
 | File | What it covers |
 | ---- | -------------- |
@@ -41,18 +42,44 @@ and writes per-stage audit files (`filter_surface_localization_audit.csv`,
 
 ## Real-data path
 
+ENT selection uses reviewed epithelial protein-outcome evidence, available
+humanized antibodies, and normal oral protein annotations in `manifests/`.
+Filters and sorting weights are configured in `configs/ent.yaml`.
+
+Eligibility requires supported epithelial localization, published human OPMD
+protein-outcome evidence, and a supplier-listed humanized antibody. Candidates
+must also meet either the progression contrast threshold or the positive
+lesion-versus-normal contrast threshold. The score weights are 40% absolute
+progression effect, 40% positive lesion effect, and 20% normal oral protein
+background. Candidates with unreviewed evidence remain in the eligibility audit.
+
+For an existing harmonized run with per-cohort contrast files:
+
 ```bash
-pip install -e ".[fetch,dev]"
-make fetch        # downloads 8 GEO series + TCGA-HNSC oral subset + HPA/Bgee/Atlas
-make harmonize    # ComBat-style batch correction across cohorts
-make contrasts    # C1 / C2 / C3 effect-size meta-analysis
-make filter       # surface + baseline + contrast-strength filters
-make train        # L1 Cox + L1 logistic, leave-one-cohort-out CV
-make rank         # SHAP + composite score
-make report       # render ranking.md
+opmd-msi prioritize-ent --run outputs/real --out outputs/real_ent
 ```
 
-Each stage writes versioned parquet artifacts so the run is fully resumable.
+For parsed cohort expression and metadata parquets under `data/raw/`:
+
+```bash
+opmd-msi real --out outputs/real_ent
+```
+
+Both routes write `ent_filter_audit.csv`, `ranking.csv`, and
+`ranking_top_promoted.csv`. Model coefficients, SHAP summaries, and correlations
+are auxiliary outputs and do not determine the ENT composite score.
+
+The checked local input run contains seven GEO series and the TCGA oral subset
+(884 samples). GSE188981 is not part of that run. The original dataset manifest
+contains earlier proposed cohorts and counts; it is not an inventory of the
+saved run. Raw downloads must be parsed before `real` can load them; the GEO
+and TCGA parser functions are in `src/opmd_msi/data/real_geo.py` and
+`src/opmd_msi/data/real_tcga.py`.
+
+`manifests/tracer_suitability.yaml` records the EGFR salivary-background concern
+and the pending integrin citation as annotations, not exclusion rules. This
+repository currently implements biomarker selection, not an image-quality
+subanalysis.
 
 ## Layout
 

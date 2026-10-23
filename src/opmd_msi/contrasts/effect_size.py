@@ -24,7 +24,8 @@ def hedges_g(case: np.ndarray, control: np.ndarray) -> EffectEstimate:
     m1, m2 = float(np.mean(case)), float(np.mean(control))
     v1, v2 = float(np.var(case, ddof=1)), float(np.var(control, ddof=1))
     sp = np.sqrt(((n1 - 1) * v1 + (n2 - 1) * v2) / (n1 + n2 - 2))
-    if sp <= 0:
+    tolerance = 64 * np.finfo(float).eps * max(1.0, np.max(np.abs(case)), np.max(np.abs(control)))
+    if not np.isfinite(sp) or sp <= tolerance:
         return EffectEstimate(0.0, np.inf, n1, n2, 1.0)
     d = (m1 - m2) / sp
     # Small-sample correction
