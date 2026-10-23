@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opmd-msi-biomarkers"
-version = "0.1.0"
+version = "0.1.1"
 description = "Reproducible ML pipeline that selects cell-surface biomarkers for molecular surgical imaging (MSI) of oral potentially malignant disorders (OPMDs)."
 readme = "README.md"
 requires-python = ">=3.10"

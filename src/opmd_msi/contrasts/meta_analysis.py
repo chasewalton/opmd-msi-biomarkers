@@ -38,17 +38,33 @@ def pool_across_cohorts(per_cohort: pd.DataFrame) -> pd.DataFrame:
 
     Input columns: gene, cohort_id, estimate, variance, n_case, n_control, p_value.
     Returns one row per gene with pooled stats and direction consistency.
+
+    When only 1 cohort contributes (e.g. single-cohort C1 in the real-data
+    run), the function still emits a row with the per-cohort estimate as the
+    "pooled" value (k=1, tau²=0, I²=NaN) so downstream filters and rankings
+    can use it. The n_cohorts_total field always reflects the real cohort count.
     """
     rows = []
     for gene, sub in per_cohort.groupby("gene"):
         est = sub["estimate"].values.astype(float)
         var = sub["variance"].values.astype(float)
-        # Drop any rows with non-finite variance (e.g. n<2 cohorts)
+        # Drop any rows with non-finite variance (e.g. zero-variance cohorts)
         mask = np.isfinite(est) & np.isfinite(var) & (var > 0)
-        if mask.sum() < 2:
+        if mask.sum() == 0:
             continue
-        meta = _dersimonian_laird(est[mask], var[mask])
-        same_dir = int(np.sum(np.sign(est[mask]) == np.sign(meta["pooled_estimate"])))
+        if mask.sum() == 1:
+            # single-cohort fallback — no meta-analysis, just propagate.
+            e = float(est[mask][0])
+            v = float(var[mask][0])
+            se = float(np.sqrt(v))
+            z = e / se if se > 0 else 0.0
+            p = float(2 * (1 - stats.norm.cdf(abs(z))))
+            meta = {"pooled_estimate": e, "se": se, "z": z, "p": p,
+                    "tau2": 0.0, "Q": 0.0, "I2": float("nan"), "k_cohorts": 1}
+            same_dir = 1
+        else:
+            meta = _dersimonian_laird(est[mask], var[mask])
+            same_dir = int(np.sum(np.sign(est[mask]) == np.sign(meta["pooled_estimate"])))
         rows.append({
             "gene": gene,
             **meta,

@@ -4,13 +4,15 @@ PY ?= python
 PIP ?= $(PY) -m pip
 PYTEST ?= $(PY) -m pytest
 
-.PHONY: help install install-fetch demo demo-clean test test-cov fetch harmonize contrasts filter train rank report lint typecheck clean
+.PHONY: help install install-fetch demo demo-clean prioritize-ent real test test-cov fetch harmonize contrasts filter train rank report lint typecheck clean
 
 help:
 	@echo "Targets:"
 	@echo "  install        Install package (core deps only)."
 	@echo "  install-fetch  Install + heavy GEO/TCGA fetcher extras."
 	@echo "  demo           Run end-to-end synthetic demo (no network)."
+	@echo "  prioritize-ent Apply ENT selection to a saved real-data run."
+	@echo "  real           Run real-data analysis with ENT selection."
 	@echo "  test           Run unit + integration tests."
 	@echo "  test-cov       Run tests with coverage report."
 	@echo "  fetch          Fetch real GEO/TCGA datasets per manifests/datasets.yaml."
@@ -30,6 +32,12 @@ install-fetch:
 
 demo:
 	$(PY) -m opmd_msi.cli demo --out outputs/demo
+
+prioritize-ent:
+	$(PY) -m opmd_msi.cli prioritize-ent
+
+real:
+	$(PY) -m opmd_msi.cli real
 
 demo-clean:
 	rm -rf outputs/demo

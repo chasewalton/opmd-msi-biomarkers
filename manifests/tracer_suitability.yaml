@@ -1,0 +1,20 @@
+schema_version: 1
+
+annotations:
+  - target: EGFR
+    target_type: gene
+    existing_tracer: user_reported
+    clinical_trials: user_reported
+    normal_tissue_concern: high_expression_in_normal_salivary_tissue
+    evidence_status: user_reported
+    citation: null
+    recorded_on: 2026-10-12
+
+  - target: integrins
+    target_type: protein_family
+    gene: null
+    existing_tracer: user_reported
+    limitation: null
+    evidence_status: awaiting_author_paper
+    citation: null
+    recorded_on: 2026-10-12
