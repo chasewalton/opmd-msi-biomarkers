@@ -9,6 +9,7 @@ import pandas as pd
 
 from opmd_msi.contrasts.contrasts import run_all_contrasts
 from opmd_msi.data.harmonize import HarmonizedDataset
+from opmd_msi.data.pairing import gse37991_patient_id
 from opmd_msi.data.real_annotations import (
     combined_surface_filter,
     parse_hpa,
@@ -38,9 +39,13 @@ def load_cohort_parquets() -> dict[str, dict[str, pd.DataFrame]]:
         meta_file = ex_file.with_name(f"{cid}.metadata.parquet")
         if not meta_file.exists():
             continue
+        metadata = pd.read_parquet(meta_file)
+        if cid == "GSE37991":
+            metadata["patient_id"] = metadata.patient_id.map(
+                lambda value: gse37991_patient_id(value, value))
         cohorts[cid] = {
             "expression": pd.read_parquet(ex_file),
-            "metadata": pd.read_parquet(meta_file),
+            "metadata": metadata,
         }
         log.info("loaded %s: %d samples", cid, cohorts[cid]["expression"].shape[0])
     return cohorts

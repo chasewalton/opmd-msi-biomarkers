@@ -21,6 +21,8 @@ import GEOparse
 import numpy as np
 import pandas as pd
 
+from opmd_msi.data.pairing import gse37991_patient_id
+
 log = logging.getLogger(__name__)
 
 
@@ -224,12 +226,11 @@ def _meta_GSE30784(gsm_id: str, g) -> dict:
 
 
 def _meta_GSE37991(gsm_id: str, g) -> dict:
-    """Lee 2013 — 40 OSCC + 40 paired adjacent. Pair via title "T<i> OSCC" / "T<i> Adjacent".
+    """40 OSCC + 40 paired adjacent samples, titled T<i> OSCC / N<i> non-OSCC.
     """
     sn = (g.metadata.get("source_name_ch1", [""])[0] or "").lower()
     title = (g.metadata.get("title", [""])[0] or "")
-    # Title is like "T17 OSCC" or "T17 Adjacent"; patient_id = T17
-    patient_id = title.split()[0] if title else gsm_id
+    patient_id = gse37991_patient_id(title, gsm_id)
     if "adjacent" in sn:
         tissue_class, risk_class = "adjacent_mucosa", "normal"
     elif "oscc" in sn or "carcinoma" in sn:
